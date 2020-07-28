@@ -20,6 +20,12 @@
         </div>
       </div>
       <div class="item">
+        <div class="title">素描</div>
+        <div class="move-content content1">
+          <img :src="img7" class="pic" />
+        </div>
+      </div>
+      <div class="item">
         <div class="title">高斯模糊</div>
         <div class="move-content content1">
           <img :src="img6" class="pic" />
@@ -29,18 +35,6 @@
         <div class="title">浮雕</div>
         <div class="move-content content1">
           <img :src="img4" class="pic" />
-        </div>
-      </div>
-      <div class="item">
-        <div class="title">底片</div>
-        <div class="move-content content1">
-          <img :src="img3" class="pic" />
-        </div>
-      </div>
-      <div class="item">
-        <div class="title">反像</div>
-        <div class="move-content content1">
-          <img :src="img5" class="pic" />
         </div>
       </div>
     </div>
@@ -58,10 +52,10 @@ export default {
       // oldImg: "", // 复古
       img1: "", // 1复古
       img2: "", // 2黑白
-      img3: "", // 3底片
       img4: "", // 4浮雕
       img5: "", // 5反像
       img6: "", // 6模糊
+      img7: "", // 素描
       imgIndex: 1, // 1复古 2黑白 3底片 4浮雕 5反像 6模糊
     };
   },
@@ -77,10 +71,9 @@ export default {
         // 处理图像
         that.drawImages(src, img.width, img.height, 1);
         that.drawImages(src, img.width, img.height, 2);
-        that.drawImages(src, img.width, img.height, 3);
         that.drawImages(src, img.width, img.height, 4);
-        that.drawImages(src, img.width, img.height, 5);
         that.drawImages(src, img.width, img.height, 6);
+        that.drawImages(src, img.width, img.height, 7);
       };
     },
     drawImages(imgSrc, width, height, index) {
@@ -103,93 +96,126 @@ export default {
         cxt.drawImage(img, 0, 0, canvas.width, canvas.height);
         // 得到每一个像素的rgb值，得到的数组以4个为单位，%4=1的是r值, %4=2是g值, %4=3是b值，%4=像素模糊值(0-255）
         let imageData = cxt.getImageData(0, 0, canvas.width, canvas.height);
-        console.log(imageData);
         let imageData_length = imageData.data.length / 4;
         let d = imageData.data;
         let originData = [];
         // 输出老照片
         if (index == 1) {
-          for (var i = 0; i < d.length; i += 4) {
-            var r = d[i];
-            var g = d[i + 1];
-            var b = d[i + 2];
-            d[i] = r * 0.393 + g * 0.769 + b * 0.189; // red
-            d[i + 1] = r * 0.349 + g * 0.686 + b * 0.168; // green
-            d[i + 2] = r * 0.272 + g * 0.534 + b * 0.131; // blue
-            d[i + 3] = 255; // 像素模糊值
-          }
-          // 输出图片
+          that.drawOldImg(d);
           cxt.putImageData(imageData, 0, 0);
           let imgurl = canvas.toDataURL(); //获取图片的DataURL
           that.img1 = imgurl;
         } else if (index == 2) {
           // 黑白
-          for (var i = 0; i < d.length; i += 4) {
-            let average = d[i] * 0.1 + d[i + 1] * 0.5 + d[i + 2] * 0.9;
-            d[i + 0] = average; //红
-            d[i + 1] = average; //绿
-            d[i + 2] = average; //蓝
-          }
-          // 输出图片
+          that.discolor(d);
           cxt.putImageData(imageData, 0, 0);
           let imgurl = canvas.toDataURL(); //获取图片的DataURL
           that.img2 = imgurl;
-        } else if (index == 3) {
-          //底片
-          for (var i = 0; i < d.length; i += 4) {
-            d[i] = 255 - d[i];
-            d[i + 1] = 255 - d[i + 1];
-            d[i + 2] = 255 - d[i + 2];
-          }
-          // 输出图片
-          cxt.putImageData(imageData, 0, 0);
-          let imgurl = canvas.toDataURL(); //获取图片的DataURL
-          that.img3 = imgurl;
         } else if (index == 4) {
           //浮雕的效果
-          for (let i = 0; i < d.length; i += 4) {
-            d[i] = d[i] - d[i + 4] + 128;
-            d[i + 1] = d[i + 1] - d[i + 5] + 128;
-            d[i + 2] = d[i + 2] - d[i + 6] + 128;
-            let avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
-            d[i] = avg;
-            d[i + 1] = avg;
-            d[i + 2] = avg;
-          }
-          // 输出图片
+          that.relief(d);
           cxt.putImageData(imageData, 0, 0);
           let imgurl = canvas.toDataURL(); //获取图片的DataURL
           that.img4 = imgurl;
-        } else if (index == 5) {
-          // 反像
-          for (let i = 0; i < d.length; i += 4) {
-            let r = d[i];
-            let g = d[i + 1];
-            let b = d[i + 2];
-            let gray = 0.3 * r + 0.59 * g + 0.11 * b; //去色
-            originData.push(gray);
-            let anti_data = 255 - gray; //取反
-            d[i] = anti_data;
-            d[i + 1] = anti_data;
-            d[i + 2] = anti_data;
-          }
-          // 输出图片
-          cxt.putImageData(imageData, 0, 0);
-          let imgurl = canvas.toDataURL(); //获取图片的DataURL
-          that.img5 = imgurl;
         } else if (index == 6) {
           // 高斯模糊
-          d = that.gaussBlur(imageData, width, height); //高斯模糊
-          // 输出图片
+          that.gaussBlurs(d, width, height, 20); //高斯模糊
           cxt.putImageData(imageData, 0, 0);
           let imgurl = canvas.toDataURL(); //获取图片的DataURL
           that.img6 = imgurl;
+        } else if (index == 7) {
+          // 素描
+          that.sketch(imageData, 50, canvas, cxt);
+          cxt.putImageData(imageData, 0, 0);
+          let imgurl = canvas.toDataURL(); //获取图片的DataURL
+          that.img7 = imgurl;
         }
       };
     },
+    // 老照片
+    drawOldImg(d) {
+      for (var i = 0; i < d.length; i += 4) {
+        var r = d[i];
+        var g = d[i + 1];
+        var b = d[i + 2];
+        d[i] = r * 0.393 + g * 0.769 + b * 0.189; // red
+        d[i + 1] = r * 0.349 + g * 0.686 + b * 0.168; // green
+        d[i + 2] = r * 0.272 + g * 0.534 + b * 0.131; // blue
+        d[i + 3] = 255; // 像素模糊值
+      }
+      return d;
+    },
+    // 素描
+    sketch(imgData, radius, canvas, ctx) {
+      let pixes = imgData.data;
+      let width = imgData.width;
+      let height = imgData.height;
+      let copyPixes = "";
+      this.discolor(pixes); //去色
+      //复制一份
+      ctx.clearRect(0, 0, width, height);
+      ctx.putImageData(imgData, 0, 0);
+      copyPixes = ctx.getImageData(0, 0, width, height).data;
+      // 拷贝数组太慢
+      this.invert(copyPixes); //反相
+      this.gaussBlurs(copyPixes, width, height, radius); //高斯模糊
+      this.dodgeColor(pixes, copyPixes); //颜色减淡
+      return pixes;
+    },
+    // 把图像变成黑白色
+    discolor(pixes) {
+      var grayscale;
+      for (var i = 0, len = pixes.length; i < len; i += 4) {
+        grayscale =
+          pixes[i] * 0.299 + pixes[i + 1] * 0.587 + pixes[i + 2] * 0.114;
+        pixes[i] = pixes[i + 1] = pixes[i + 2];
+      }
+      return pixes;
+    },
+    //浮雕
+    relief(d) {
+      for (var i = 0, j = 4; i < d.length; i += 4, j += 4) {
+        if (j > d.length) {
+          j = d.length - 4;
+        }
+        // 3.把相邻像素的同个通道进行差值运算,再加上中性灰的色值
+        let r = Math.abs(d[i] - d[j] + 128),
+          g = Math.abs(d[i + 1] - d[j + 1] + 128),
+          b = Math.abs(d[i + 2] - d[j + 2] + 128);
+
+        // 4.把结果通道的值进行求和并按权平均作为最终通道的值
+        let val = parseInt(r * 0.3 + g * 0.6 + b * 0.1);
+        d[i] = val;
+        d[i + 1] = val;
+        d[i + 2] = val;
+      }
+      return d;
+    },
+    // 把图片反相, 即将某个颜色换成它的补色
+    invert(pixes) {
+      for (var i = 0, len = pixes.length; i < len; i += 4) {
+        pixes[i] = 255 - pixes[i]; //r
+        pixes[i + 1] = 255 - pixes[i + 1]; //g
+        pixes[i + 2] = 255 - pixes[i + 2]; //b
+      }
+      return pixes;
+    },
+    // 颜色减淡
+    dodgeColor(basePixes, mixPixes) {
+      for (var i = 0, len = basePixes.length; i < len; i += 4) {
+        basePixes[i] =
+          basePixes[i] + (basePixes[i] * mixPixes[i]) / (255 - mixPixes[i]);
+        basePixes[i + 1] =
+          basePixes[i + 1] +
+          (basePixes[i + 1] * mixPixes[i + 1]) / (255 - mixPixes[i + 1]);
+        basePixes[i + 2] =
+          basePixes[i + 2] +
+          (basePixes[i + 2] * mixPixes[i + 2]) / (255 - mixPixes[i + 2]);
+      }
+      return basePixes;
+    },
     // 高斯模糊
-    gaussBlur(img, width, height) {
-      var pixes = img.data;
+    gaussBlurs(pixes, width, height, radius) {
       var gaussMatrix = [],
         gaussSum = 0,
         x,
@@ -203,8 +229,8 @@ export default {
         k,
         len;
 
-      var radius = 10;
-      var sigma = 5;
+      radius = Math.floor(radius) || 3;
+      let sigma = radius / 3;
 
       a = 1 / (Math.sqrt(2 * Math.PI) * sigma);
       b = -1 / (2 * sigma * sigma);
@@ -258,7 +284,6 @@ export default {
               r += pixes[i] * gaussMatrix[j + radius];
               g += pixes[i + 1] * gaussMatrix[j + radius];
               b += pixes[i + 2] * gaussMatrix[j + radius];
-              // a += pixes[i + 3] * gaussMatrix[j];
               gaussSum += gaussMatrix[j + radius];
             }
           }
@@ -268,7 +293,7 @@ export default {
           pixes[i + 2] = b / gaussSum;
         }
       }
-      return img;
+      return pixes;
     },
   },
 };
