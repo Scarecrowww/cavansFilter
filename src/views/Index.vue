@@ -1,5 +1,9 @@
 <template>
   <div class="demo">
+    <div class="upload-btn">
+      <span>上传图片</span>
+      <input type="file" class="file-btn" ref="fileBtn" @change="uploadImg" accept="image/*" />
+    </div>
     <div>
       <div class="title">原图</div>
       <div class="move-content">
@@ -47,7 +51,7 @@ export default {
   name: "Demo2",
   data() {
     return {
-      imageUrl: require("../assets/bg.jpg"),
+      imageUrl: require("../assets/bg.png"),
       // imageUrl: null,
       // oldImg: "", // 复古
       img1: "", // 1复古
@@ -75,6 +79,35 @@ export default {
         that.drawImages(src, img.width, img.height, 6);
         that.drawImages(src, img.width, img.height, 7);
       };
+    },
+    async uploadImg() {
+      var that = this;
+      let inputFile = await that.$refs.fileBtn.files[0];
+      let size = inputFile.size; // 读取文件的大小
+      let maxSize = 7 * 1024 * 1024; // 限定最大文件的大小
+      if (size > maxSize) {
+        alert("不能上传大于7M的图");
+      } else {
+        let res;
+        if (inputFile) {
+          // 使用FileReader去读取file对象
+          const reader = new FileReader();
+          res = reader.readAsDataURL(inputFile);
+          reader.onloadend = function () {
+            // 把图片转base64
+            var strBase64 = reader.result.substring(0);
+            that.imageUrl = strBase64;
+            let img = new Image();
+            img.src = strBase64;
+            img.onload = function () {
+              // 处理图像
+              that.getImg(that.imageUrl);
+            };
+          };
+        } else {
+          alert("上传失败");
+        }
+      }
     },
     drawImages(imgSrc, width, height, index) {
       let that = this;
@@ -125,7 +158,7 @@ export default {
           that.img6 = imgurl;
         } else if (index == 7) {
           // 素描
-          that.sketch(imageData, 50, canvas, cxt);
+          that.sketch(imageData, 20, canvas, cxt);
           cxt.putImageData(imageData, 0, 0);
           let imgurl = canvas.toDataURL(); //获取图片的DataURL
           that.img7 = imgurl;
@@ -163,14 +196,14 @@ export default {
       return pixes;
     },
     // 把图像变成黑白色
-    discolor(pixes) {
-      var grayscale;
-      for (var i = 0, len = pixes.length; i < len; i += 4) {
-        grayscale =
-          pixes[i] * 0.299 + pixes[i + 1] * 0.587 + pixes[i + 2] * 0.114;
-        pixes[i] = pixes[i + 1] = pixes[i + 2];
+    discolor(d) {
+      for (var i = 0; i < d.length; i += 4) {
+        let average = d[i] * 0.1 + d[i + 1] * 0.5 + d[i + 2] * 0.9;
+        d[i + 0] = average; //红
+        d[i + 1] = average; //绿
+        d[i + 2] = average; //蓝
       }
-      return pixes;
+      return d;
     },
     //浮雕
     relief(d) {
@@ -304,6 +337,26 @@ export default {
   width: 100vw;
   height: 100vh;
   overflow: auto;
+  .upload-btn {
+    width: 10rem;
+    height: 4rem;
+    overflow: hidden;
+    position: relative;
+    background: bisque;
+    border: 1px solid #f3f3f3;
+    border-radius: 8px;
+    line-height: 4rem;
+    font-size: 1.5rem;
+    text-align: center;
+    .file-btn {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0;
+    }
+  }
   .title {
     height: 2rem;
     line-height: 2rem;
